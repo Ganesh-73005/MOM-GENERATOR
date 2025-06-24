@@ -56,3 +56,18 @@ async function checkForZoomMeeting() {
     Office.context.ui.message("Error processing meeting: " + error.message);
   }
 }
+
+function getBodyText(item) {
+  return new Promise((resolve) => {
+    item.body.getAsync(Office.CoercionType.Text, (result) => resolve(result.value));
+  });
+}
+
+function extractZoomLink(text) {
+  const regex = /https:\/\/[\w-]*\.?zoom.us\/(j|my)\/[\d\w?=-]+/i;
+  return text.match(regex)?.[0];
+}
+
+function extractZoomId(link) {
+  return link.split("/j/")[1]?.split("?")[0];
+}
