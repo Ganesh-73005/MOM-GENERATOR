@@ -1,3 +1,41 @@
+// Define helper functions first
+function getBodyText(item) {
+  return new Promise((resolve) => {
+    item.body.getAsync(Office.CoercionType.Text, (result) => resolve(result.value));
+  });
+}
+
+function extractZoomLink(text) {
+  const regex = /https:\/\/[\w-]*\.?zoom.us\/(j|my)\/[\d\w?=-]+/i;
+  return text.match(regex)?.[0];
+}
+
+function extractZoomId(link) {
+  return link.split("/j/")[1]?.split("?")[0];
+}
+
+function showMessage(message) {
+  // Check which message API is available
+  if (Office.context.ui && Office.context.ui.displayDialogAsync) {
+    // Modern Office versions
+    Office.context.ui.displayDialogAsync(
+      `https://yourdomain.com/message.html?text=${encodeURIComponent(message)}`,
+      { height: 50, width: 300 }
+    );
+  } else if (Office.context.mailbox && Office.context.mailbox.item) {
+    // Fallback for older versions
+    Office.context.mailbox.item.notificationMessages.addAsync("status", {
+      type: "informationalMessage",
+      message: message,
+      icon: "icon.16x16",
+      persistent: false
+    });
+  } else {
+    // Last resort - use console
+    console.log("Message:", message);
+  }
+}
+
 Office.initialize = function () {
   document.getElementById("checkZoom").addEventListener("click", checkForZoomMeeting);
 };
@@ -40,6 +78,7 @@ async function checkForZoomMeeting() {
               if (asyncResult.status === Office.AsyncResultStatus.Failed) {
                 reject(asyncResult.error);
               } else {
+                showMessage("Meeting details added successfully!");
                 resolve();
               }
             }
@@ -49,25 +88,10 @@ async function checkForZoomMeeting() {
         throw new Error("Email body editing not available in this context");
       }
     } else {
-      Office.context.ui.message("No Zoom link found in this email.");
+      showMessage("No Zoom link found in this email.");
     }
   } catch (error) {
     console.error("Error in checkForZoomMeeting:", error);
-    Office.context.ui.message("Error processing meeting: " + error.message);
+    showMessage("Error processing meeting: " + error.message);
   }
-}
-
-function getBodyText(item) {
-  return new Promise((resolve) => {
-    item.body.getAsync(Office.CoercionType.Text, (result) => resolve(result.value));
-  });
-}
-
-function extractZoomLink(text) {
-  const regex = /https:\/\/[\w-]*\.?zoom.us\/(j|my)\/[\d\w?=-]+/i;
-  return text.match(regex)?.[0];
-}
-
-function extractZoomId(link) {
-  return link.split("/j/")[1]?.split("?")[0];
 }
