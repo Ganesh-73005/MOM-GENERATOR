@@ -9,7 +9,7 @@ async function checkForZoomMeeting() {
 
   if (zoomLink) {
     const meetingId = extractZoomId(zoomLink);
-    const response = await fetch("https://your-backend.ngrok.io/get-zoom-details", {
+    const response = await fetch("https://b485-192-193-107-47.ngrok-free.app/get-zoom-details", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ meetingId }),
