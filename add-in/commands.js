@@ -3,28 +3,36 @@ Office.initialize = function () {
 };
 
 async function checkForZoomMeeting() {
-  const item = Office.context.mailbox.item;
-  const body = await getBodyText(item);
-  const zoomLink = extractZoomLink(body);
+  try {
+    const item = Office.context.mailbox.item;
+    const body = await getBodyText(item);
+    const zoomLink = extractZoomLink(body);
 
-  if (zoomLink) {
-    const meetingId = extractZoomId(zoomLink);
-    const response = await fetch("https://b485-192-193-107-47.ngrok-free.app/get-zoom-details", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meetingId }),
-    });
+    if (zoomLink) {
+      const meetingId = extractZoomId(zoomLink);
+      const response = await fetch("http://localhost:3000/get-zoom-details", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "GANESH73005" // Match your backend secret
+        },
+        body: JSON.stringify({ meetingId })
+      });
 
-    const data = await response.json();
-    Office.context.mailbox.item.body.setAsync(
-      `${body}<hr><h2>Zoom Meeting Details</h2><p>Meeting ID: ${data.id}</p>`,
-      { coercionType: Office.CoercionType.Html }
-    );
-  } else {
-    Office.context.ui.message("No Zoom link found.");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Handle the response data
+    } else {
+      Office.context.ui.message("No Zoom link found.");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    Office.context.ui.message("Failed to process meeting. See console for details.");
   }
 }
-
 function getBodyText(item) {
   return new Promise((resolve) => {
     item.body.getAsync(Office.CoercionType.Text, (result) => resolve(result.value));
